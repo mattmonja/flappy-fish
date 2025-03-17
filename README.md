@@ -8,8 +8,6 @@ Flappy Fish for Emacs
   </p>
 </div>
 
-<div align="center">
-
 ---
 
 Flapping fish in your active buffer
