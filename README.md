@@ -49,7 +49,7 @@ If you want to add the fish to your custom mode-line format:
 (fish-start-timer) ;; or (fish-start-timer 'swimming)
 
 (setq-default mode-line-format
-              (cons fish-mode-line-string original-mode-line-format))
+	(cons fish-mode-line-string original-mode-line-format))
 ```
 
 ## Customization
