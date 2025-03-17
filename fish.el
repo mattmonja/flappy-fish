@@ -43,83 +43,82 @@
   :type 'integer
   :group 'fish)
 
-(defcustom fish-wave-character " "
-  "Character used for the background of the fish swimming area."
+(defcustom fish-wave-character "~"
+  "Character used for the background."
   :type 'string
   :group 'fish)
 
 (defcustom fish-prefix " "
-  "Text to display before the fish in the mode-line."
+  "Text before the fish."
   :type 'string
   :group 'fish)
 
 (defcustom fish-suffix ""
-  "Text to display after the fish in the mode-line."
+  "Text after the fish."
   :type 'string
   :group 'fish)
 
 (defvar fish-frames ["𓆝" "𓆟" "𓆞"]
-  "Fish frames for the flapping animation.")
+  "Fish animation frames.")
 
 (defvar fish-index 0
-  "Which frame in `fish-frames' is currently displayed.")
+  "Current frame number.")
 (make-variable-buffer-local 'fish-index)
 
 (defface fish-face
   '((t :family "Noto Sans Egyptian Hieroglyphs"))
-  "Face for the flappy fish glyph in the mode line."
+  "Face for the fish."
   :group 'fish)
 
 (defvar fish--timer nil
-  "Animation timer for Flappy Fish scrolling mode.")
+  "Animation timer.")
 
 (defvar fish-mode-line-string ""
-  "Buffered mode-line string containing the fish display.")
+  "Mode-line string for fish display.")
 (make-variable-buffer-local 'fish-mode-line-string)
 (put 'fish-mode-line-string 'risky-local-variable t)
 
 (defvar fish--current-display-type 'static
-  "Current display type: 'static or 'swimming.")
+  "Display type: 'static or 'swimming.")
 
-(defun fish--advance-frame ()
-  "Move to the next fish frame and update mode lines."
+(defun fish--next-frame ()
+  "Move to next fish frame."
   (let ((active-buf (window-buffer (selected-window))))
     (when (buffer-live-p active-buf)
       (with-current-buffer active-buf
-        (setq fish-index (mod (1+ fish-index)
-                              (length fish-frames)))
-        (fish--update-mode-line-string))))
+        (setq fish-index (mod (1+ fish-index) (length fish-frames)))
+        (fish--update-display))))
   (force-mode-line-update nil))
 
-(defun fish--fraction ()
-  "Return point's fraction (0..1) between buffer limits."
+(defun fish--get-position ()
+  "Get position as fraction between 0 and 1."
   (let ((max (point-max))
         (min (point-min)))
     (if (<= max min)
         0.0
       (/ (float (- (point) min)) (float (- max min))))))
 
-(defun fish--scroll-buffer (fraction buf)
-  "Scroll BUF to FRACTION (0..1) of its length."
+(defun fish--go-to-position (fraction buf)
+  "Go to FRACTION of BUF."
   (when (buffer-live-p buf)
     (with-current-buffer buf
       (goto-char (+ (point-min)
                     (floor (* fraction (- (point-max) (point-min)))))))))
 
-(defun fish--add-click (string fraction buffer)
-  "Propertize STRING so clicking moves BUFFER to FRACTION."
+(defun fish--make-clickable (string fraction buffer)
+  "Make STRING clickable to move to FRACTION in BUFFER."
   (propertize string
               'mouse-face 'highlight
               'local-map (let ((map (make-sparse-keymap)))
                            (define-key map [mode-line down-mouse-1]
                              (lambda ()
                                (interactive)
-                               (fish--scroll-buffer fraction buffer)))
+                               (fish--go-to-position fraction buffer)))
                            map)))
 
-(defun fish--position-line ()
-  "Build a line with the fish at the correct position."
-  (let* ((progress (fish--fraction))
+(defun fish--swimming-display ()
+  "Create swimming fish display."
+  (let* ((progress (fish--get-position))
          (fish-pos (min (floor (* progress fish-bar-length))
                         (1- fish-bar-length)))
          (wave "")
@@ -127,77 +126,70 @@
     (dotimes (i fish-bar-length)
       (if (= i fish-pos)
           (setq wave (concat wave
-                             (fish--add-click
+                             (fish--make-clickable
                               (propertize (aref fish-frames fish-index)
                                           'face 'fish-face)
                               (/ (float i) fish-bar-length)
                               buf)))
         (setq wave (concat wave
-                           (fish--add-click fish-wave-character
-                                            (/ (float i) fish-bar-length)
-                                            buf)))))
+                           (fish--make-clickable fish-wave-character
+                                                 (/ (float i) fish-bar-length)
+                                                 buf)))))
     wave))
 
-(defun fish--create-swimming ()
-  "Return the mode-line string for the swimming fish."
-  (if (eq (current-buffer) (window-buffer (selected-window)))
-      (fish--position-line)
-    ""))
+(defun fish--static-display ()
+  "Create static fish display."
+  (propertize (concat " " (aref fish-frames fish-index)) 'face 'fish-face))
 
-(defun fish--create-static ()
-  "Return the mode-line string for a static flapping fish."
-  (if (eq (current-buffer) (window-buffer (selected-window)))
-      (propertize (concat " " (aref fish-frames fish-index)) 'face 'fish-face)
-    ""))
-
-(defun fish--update-mode-line-string ()
-  "Update `fish-mode-line-string' with current fish display."
+(defun fish--update-display ()
+  "Update fish display."
   (setq fish-mode-line-string
-        (propertize 
-         (concat fish-prefix
-                 (if (eq fish--current-display-type 'swimming)
-                     (fish--create-swimming)
-                   (fish--create-static))
-                 fish-suffix)
-         'help-echo "Flappy fish! Click to navigate."))
+        (concat fish-prefix
+                (if (eq fish--current-display-type 'swimming)
+                    (if (eq (current-buffer) (window-buffer (selected-window)))
+                        (fish--swimming-display)
+                      "")
+                  (if (eq (current-buffer) (window-buffer (selected-window)))
+                      (fish--static-display)
+                    ""))
+                fish-suffix))
   fish-mode-line-string)
 
 (defun fish--update-on-buffer-change (_)
-  "Update fish display when buffer changes."
+  "Update fish when buffer changes."
   (when (buffer-live-p (window-buffer (selected-window)))
     (with-current-buffer (window-buffer (selected-window))
-      (fish--update-mode-line-string))))
+      (fish--update-display))))
 
-;;;###autoload
 (defun fish-start-timer (&optional display-type)
-  "Start the fish animation timer with DISPLAY-TYPE ('static or 'swimming)."
+  "Start fish animation with DISPLAY-TYPE ('static or 'swimming)."
   (interactive)
   (when fish--timer
     (cancel-timer fish--timer))
   
   (setq fish--current-display-type (or display-type 'static))
-  (setq fish--timer (run-at-time nil fish-update-period 'fish--advance-frame))
-  ;; Initialize fish-mode-line-string for all buffers
+  (setq fish--timer (run-at-time nil fish-update-period 'fish--next-frame))
+  
   (dolist (buf (buffer-list))
     (with-current-buffer buf
-      (fish--update-mode-line-string)))
-  ;; Add hook to update fish when buffer changes
+      (fish--update-display)))
+  
   (add-hook 'window-buffer-change-functions #'fish--update-on-buffer-change)
-  (fish--update-mode-line-string))
+  (fish--update-display))
 
-;;;###autoload
 (defun fish-stop ()
-  "Stop the fish animation and clear the mode-line string."
+  "Stop the fish animation."
   (interactive)
   (when fish--timer
     (cancel-timer fish--timer)
     (setq fish--timer nil))
-  ;; Remove the buffer change hook
+  
   (remove-hook 'window-buffer-change-functions #'fish--update-on-buffer-change)
-  ;; Clear fish-mode-line-string in all buffers
+  
   (dolist (buf (buffer-list))
     (with-current-buffer buf
       (setq fish-mode-line-string "")))
+  
   (force-mode-line-update t))
 
 (provide 'fish)
