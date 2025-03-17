@@ -95,21 +95,6 @@ If the fish isn't displaying correctly:
 
 - For best display, a font with Egyptian hieroglyphs (like Noto Sans Egyptian Hieroglyphs)
 
-
-```elisp
-(require 'fish)
-(fish-start-timer 'static)
-;; Set up mode-line-format to include fish-mode-line-string
-(setq-default mode-line-format
-            (list "%e" mode-line-front-space mode-line-mule-info
-                  mode-line-client mode-line-modified mode-line-remote
-                  mode-line-frame-identification mode-line-buffer-identification
-                  "   " mode-line-position
-                  '(vc-mode vc-mode)
-                  "  " mode-line-modes
-                  'fish-mode-line-string))
-```
-
 ### 4. Customizing the fish appearance:
 ```elisp
 (setq fish-prefix "🌊 ")    ;; Add a wave in front of the fishy
