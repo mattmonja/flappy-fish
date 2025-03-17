@@ -1,4 +1,4 @@
-# Flappy Fish for Emacs 𓆝 𓆟 𓆞
+# Flappy Fish for Emacs
 
 Flapping fish in your active buffer
 
