@@ -2,7 +2,7 @@ Flappy Fish for Emacs
 ===
 
 <div align="center">
-  <img src=".fishy.gif" alt="fishy" style="max-width:80%; border-radius: 8px;"/>
+  <img src="./fishy.gif" alt="fishy" style="max-width:80%; border-radius: 8px;"/>
   <p style="font-size: small; color: #555; margin-top: 8px;">
     <em>"Even a fish wouldn't get into trouble if it kept its mouth shut." </em>
   </p>
