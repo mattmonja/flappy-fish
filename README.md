@@ -113,3 +113,7 @@ If the fish isn't displaying correctly:
 - `fish-wave-character` - Character used for the background of the fish swimming area
 - `fish-prefix` - Text to display before the fish in the mode-line
 - `fish-suffix` - Text to display after the fish in the mode-line 
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=mattmonja/flappy-fish&type=Date)](https://www.star-history.com/#mattmonja/flappy-fish&Date)
